@@ -10,33 +10,28 @@ import React, { PropTypes } from 'react';
 import classNames from 'classnames';
 import polyglot from '../i18n';
 
-const ExternalEmbedSearchFilter = ({ localFetchEmbedSearch, query, textQuery }) => {
+const ExternalEmbedSearchFilter = ({ currentFilter, onFilterChange }) => {
   const filterClass = filter => classNames({
     'un-button': true,
     'embed-search_form-filter ': true,
-    'embed-search_form-filter--active': query.filter === filter,
+    'embed-search_form-filter--active': filter === currentFilter.key,
   });
-
-  const handleFilterChange = (evt, filter) => {
-    evt.preventDefault();
-    localFetchEmbedSearch(Object.assign({}, query, { filter, textQuery }));
-  };
-
-  const filters = [{ name: polyglot.t('embedSearch.form.allFilter'), key: '' }, { name: 'Youtube', key: 'more:youtube' }, { name: 'NDLA', key: 'more:ndla' }];
+  const filters = [{ key: 'more:youtube', name: 'Youtube', type: 'oembed' }, { key: 'more:ted', name: 'Ted', type: 'oembed' }, { key: 'khan', name: 'Khan Academy', type: 'lti' }];
 
   return (
-    <div className="embed-search_form-filters">
-      {filters.map(filter =>
-        <button key={filter.key} className={filterClass(filter.key)} onClick={evt => handleFilterChange(evt, filter.key)}>{filter.name}</button>
-      )}
+    <div className="embed-search_form">
+      <div className="embed-search_form-filters">
+        {filters.map(filter =>
+          <button key={filter.key} onClick={evt => onFilterChange(evt, filter)} className={filterClass(filter.key)}>{filter.name}</button>
+        )}
+      </div>
     </div>
   );
 };
 
 ExternalEmbedSearchFilter.propTypes = {
-  localFetchEmbedSearch: PropTypes.func.isRequired,
-  query: PropTypes.object.isRequired,
-  textQuery: PropTypes.string.isRequired,
+  currentFilter: PropTypes.object.isRequired,
+  onFilterChange: PropTypes.func.isRequired,
 };
 
 export default ExternalEmbedSearchFilter;

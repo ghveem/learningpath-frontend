@@ -7,31 +7,46 @@
  */
 
 import React, { PropTypes } from 'react';
+import classNames from 'classnames';
+import ExternalEmbedSearchFilter from './ExternalEmbedSearchFilter';
+import ExternalEmbedSearchContainer from './ExternalEmbedSearchContainer';
 
 class ExternalEmbedSearch extends React.Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      displayExternalSearch: false,
+      active: false,
+      filter: { key: 'youtube', name: 'Youtube', type: 'oembed' },
+
     };
     this.toggledisplayExternalSearch = this.toggledisplayExternalSearch.bind(this);
-    this.ltiSearchClose = this.ltiSearchClose.bind(this);
+    this.onFilterChange = this.onFilterChange.bind(this);
   }
-  toggledisplayExternalSearch(evt) {
+  onFilterChange(evt, filter) {
     evt.preventDefault();
-    this.setState({ displayExternalSearch: !this.state.displayExternalSearch });
+    this.setState({ filter });
   }
 
+  toggledisplayExternalSearch(evt) {
+    evt.preventDefault();
+    this.setState({ active: !this.state.active });
+  }
+
+
   render() {
-    const filters = [{ name: 'Youtube', type: 'oembed' }, { name: 'Khan Academy', type: 'lti' }];
+    const containerClass = {
+      'embed-search_container': true,
+      'embed-search_container--active': this.state.active,
+    };
     return (
       <div>
         <button className="button button--primary button--block embed-search_open-button" onClick={this.toggledisplayExternalSearch}>
           Søk i eksterne ressurser
         </button>
-        <div>
-          <p>Halla</p>
+        <div className={classNames(containerClass)}>
+          <ExternalEmbedSearchFilter currentFilter={this.state.filter} onFilterChange={this.onFilterChange} />
+          <ExternalEmbedSearchContainer currentFilter={this.state.filter} />
         </div>
       </div>
     );
