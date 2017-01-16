@@ -17,8 +17,18 @@ import { fetchLearningPathImageWithMetaUrl, setSelectedImage, setSavedImage } fr
 import { fetchMyLearningPaths } from '../myPage/myPageActions';
 
 export const setLearningPath = createAction('SET_LEARNING_PATH');
-export const setLearningPathStatus = createAction('UPDATE_LEARNING_PATH_STATUS');
+export const setLearningPathsStatus = createAction('UPDATE_LEARNING_PATHS_STATUS');
 export const removeLearningPath = createAction('REMOVE_LEARNING_PATH');
+export const setLearningPathStatus = createAction('UPDATE_LEARNING_PATH_STATUS');
+
+
+function canAccessLearningPath(path, isEdit = false, dispatch) {
+  if ((isEdit && !path.canEdit)) {
+    dispatch(routerActions.push({
+      pathname: '/forbidden',
+    }));
+  }
+}
 
 function fetchIsBasedOnPath(path) {
   return (dispatch, getState) => fetchPath(getState().authToken, { pathId: path.isBasedOn })
@@ -27,21 +37,32 @@ function fetchIsBasedOnPath(path) {
     });
 }
 
-export function fetchLearningPath(pathId) {
+export function fetchLearningPath(pathId, isEdit = false) {
   return (dispatch, getState) => fetchPath(getState().authToken, { pathId })
-    .then(path => dispatch(setLearningPath(path)))
     .then((path) => {
-      if (path.payload.coverPhoto) {
-        dispatch(fetchLearningPathImageWithMetaUrl(path.payload.coverPhoto.metaUrl));
+      canAccessLearningPath(path, isEdit, dispatch);
+      dispatch(setLearningPath(path));
+      return path;
+    })
+    .then((path) => {
+      if (path.coverPhoto) {
+        dispatch(fetchLearningPathImageWithMetaUrl(path.coverPhoto.metaUrl));
       } else {
         dispatch(setSavedImage({}));
         dispatch(setSelectedImage({}));
       }
-      if (path.payload.isBasedOn) {
-        dispatch(fetchIsBasedOnPath(path.payload));
+      if (path.isBasedOn) {
+        dispatch(fetchIsBasedOnPath(path));
       }
     })
-    .catch(err => dispatch(applicationError(err)));
+    .catch((err) => {
+      if (err.status === 403) {
+        dispatch(routerActions.push({ pathname: '/forbidden' }));
+      } else if (err.status === 404) {
+        dispatch(routerActions.push({ pathname: '/notfound' }));
+      }
+      dispatch(applicationError(err));
+    });
 }
 
 export function createEmptyLearningPath() {
@@ -110,11 +131,10 @@ export function deleteLearningPath(learningPath) {
       ))
     );
 }
-
-export function updateLearningPathStatus(pathId, status, redirectUrl = false) {
+function updateLPStatus(pathId, status, redirectUrl, setStatus) {
   return (dispatch, getState) => updateStatus(getState().authToken, { pathId }, { status })
     .then(() => {
-      dispatch(setLearningPathStatus({ id: pathId, status }));
+      dispatch(setStatus);
       dispatch(addMessage({ message: polyglot.t('updateLearningPathStatus.updateStatusMsg') }));
       if (redirectUrl) {
         dispatch(routerActions.push({
@@ -123,6 +143,15 @@ export function updateLearningPathStatus(pathId, status, redirectUrl = false) {
       }
     })
     .catch(err => dispatch(applicationError(err)));
+}
+export function updateLearningPathsStatus(pathId, status, redirectUrl = false) {
+  const setStatus = setLearningPathsStatus({ id: pathId, status });
+  return updateLPStatus(pathId, status, redirectUrl, setStatus);
+}
+
+export function updateLearningPathStatus(pathId, status, redirectUrl = false) {
+  const setStatus = setLearningPathStatus({ status });
+  return updateLPStatus(pathId, status, redirectUrl, setStatus);
 }
 
 export function copyLearningPath(learningPath, locale) {
