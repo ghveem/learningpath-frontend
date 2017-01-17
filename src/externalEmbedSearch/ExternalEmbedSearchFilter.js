@@ -10,14 +10,19 @@ import React, { PropTypes } from 'react';
 import classNames from 'classnames';
 import polyglot from '../i18n';
 
-const ExternalEmbedSearchFilter = ({ currentFilter, onFilterChange }) => {
+const ExternalEmbedSearchFilter = ({ currentFilter, onFilterChange, learningPathId, stepId }) => {
   const filterClass = filter => classNames({
     'un-button': true,
     'embed-search_form-filter ': true,
     'embed-search_form-filter--active': filter === currentFilter.key,
   });
-  const filters = [{ key: 'more:youtube', name: 'Youtube', type: 'oembed' }, { key: 'more:ted', name: 'Ted', type: 'oembed' }, { key: 'khan', name: 'Khan Academy', type: 'lti' }];
-
+  const returnUrl = stepId ? `${window.location.origin}/lti/${learningPathId}/step/${stepId}` : `${window.location.origin}/lti/${learningPathId}/step/new`;
+  const filters = [
+    { key: 'more:youtube', name: 'Youtube', type: 'oembed' },
+    { key: 'more:ted', name: 'Ted', type: 'oembed' },
+    { key: 'khan_academy', returnUrl, name: 'Khan Academy', type: 'lti' },
+    { key: 'quizlet', returnUrl, name: 'Quizlet', type: 'lti' },
+  ];
   return (
     <div className="embed-search_form">
       <div className="embed-search_form-filters">
@@ -32,6 +37,8 @@ const ExternalEmbedSearchFilter = ({ currentFilter, onFilterChange }) => {
 ExternalEmbedSearchFilter.propTypes = {
   currentFilter: PropTypes.object.isRequired,
   onFilterChange: PropTypes.func.isRequired,
+  learningPathId: PropTypes.number.isRequired,
+  stepId: PropTypes.number,
 };
 
 export default ExternalEmbedSearchFilter;

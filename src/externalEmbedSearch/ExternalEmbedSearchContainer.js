@@ -9,9 +9,14 @@
 import React, { PropTypes } from 'react';
 import classNames from 'classnames';
 import polyglot from '../i18n';
+import LTISearch from '../ltiSearch/LTISearch';
 
-const ExternalEmbedSearchContainer = ({ currentFilter }) => {
-  console.log(currentFilter);
+const ExternalEmbedSearchContainer = ({ currentFilter, embedTypeOnBlur, urlOnBlur }) => {
+  if (currentFilter.type === 'lti') {
+    return (
+      <LTISearch filter={currentFilter} embedTypeOnBlur={embedTypeOnBlur} urlOnBlur={urlOnBlur} />
+    );
+  }
   return (
     <div className="embed-search_result">
       <p>Her vises noe</p>
@@ -21,6 +26,8 @@ const ExternalEmbedSearchContainer = ({ currentFilter }) => {
 
 ExternalEmbedSearchContainer.propTypes = {
   currentFilter: PropTypes.object.isRequired,
+  embedTypeOnBlur: PropTypes.func.isRequired,
+  urlOnBlur: PropTypes.func.isRequired,
 };
 
 export default ExternalEmbedSearchContainer;

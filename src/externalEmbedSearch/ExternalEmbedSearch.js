@@ -35,6 +35,7 @@ class ExternalEmbedSearch extends React.Component {
 
 
   render() {
+    const { learningPathId, stepId, embedTypeOnBlur, urlOnBlur } = this.props;
     const containerClass = {
       'embed-search_container': true,
       'embed-search_container--active': this.state.active,
@@ -45,8 +46,8 @@ class ExternalEmbedSearch extends React.Component {
           Søk i eksterne ressurser
         </button>
         <div className={classNames(containerClass)}>
-          <ExternalEmbedSearchFilter currentFilter={this.state.filter} onFilterChange={this.onFilterChange} />
-          <ExternalEmbedSearchContainer currentFilter={this.state.filter} />
+          <ExternalEmbedSearchFilter currentFilter={this.state.filter} onFilterChange={this.onFilterChange} learningPathId={learningPathId} stepId={stepId} />
+          <ExternalEmbedSearchContainer currentFilter={this.state.filter} embedTypeOnBlur={embedTypeOnBlur} urlOnBlur={urlOnBlur} />
         </div>
       </div>
     );
@@ -54,7 +55,10 @@ class ExternalEmbedSearch extends React.Component {
 }
 
 ExternalEmbedSearch.propTypes = {
-
+  learningPathId: PropTypes.number.isRequired,
+  stepId: PropTypes.number,
+  embedTypeOnBlur: PropTypes.func.isRequired,
+  urlOnBlur: PropTypes.func.isRequired,
 };
 
 export default ExternalEmbedSearch;
