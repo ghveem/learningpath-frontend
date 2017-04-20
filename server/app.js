@@ -16,12 +16,20 @@ import webpackDevMiddleware from 'webpack-dev-middleware';
 import webpackHotMiddleware from 'webpack-hot-middleware';
 import requestProxy from 'express-request-proxy';
 
+
+import { syncHistoryWithStore } from 'react-router-redux';
+import { Provider } from 'react-redux';
+import { match, RouterContext } from 'react-router';
+import configureRoutes from '../src/main/routes';
+import configureStore from '../src/configureStore';
+import createMemoryHistory from './createMemoryHistory';
 import config from '../src/config';
 import webpackConfig from '../webpack.config.dev';
-import { getHtmlLang } from '../src/locale/configureLocale';
+import { getHtmlLang, isValidLocale } from '../src/locale/configureLocale';
 import Html from './Html';
 import { getToken, isTokenExpired, getExpireTime } from './auth';
 import Auth0SilentCallback from './Auth0SilentCallback';
+import getConditionalClassnames from './getConditionalClassnames';
 
 const app = express();
 
@@ -40,6 +48,11 @@ app.use(compression());
 app.use(express.static('htdocs', {
   maxAge: 1000 * 60 * 60 * 24 * 365, // One year
 }));
+
+
+const renderHtmlString = (locale, userAgentString, state = {}, component = undefined) =>
+  renderToString(<Html lang={locale} state={state} component={component} className={getConditionalClassnames(userAgentString)} />);
+
 
 const findIEClass = (userAgentString) => {
   if (userAgentString.indexOf('MSIE') >= 0) {
@@ -72,16 +85,70 @@ app.get('/get_token', (req, res) => {
   }).catch(err => res.status(500).send(err.message));
 });
 
-app.get('*', (req, res) => {
-  function renderOnClient() {
-    getToken().then((token) => {
-      const paths = req.url.split('/');
-      const lang = getHtmlLang(defined(paths[1], ''));
-      res.send('<!doctype html>\n' + renderToString(<Html lang={lang} className={findIEClass(req.headers['user-agent'])} token={token}/>)); // eslint-disable-line
-    }).catch(err => res.status(500).send(err.message));
-  }
+function handleResponse(req, res, token) {
+  const paths = req.url.split('/');
+  const locale = getHtmlLang(defined(paths[1], ''));
+  const userAgentString = req.headers['user-agent'];
 
-  renderOnClient();
+
+  if (global.__DISABLE_SSR__) { // eslint-disable-line no-underscore-dangle
+    console.log('DISABLED SSR');
+    //  res.send('<!doctype html>\n' + renderToString(<Html lang={lang} className={findIEClass(req.headers['user-agent'])} token={token}/>)); // eslint-disable-line
+    const htmlString = renderHtmlString(locale, userAgentString, { accessToken: token.access_token });
+    res.send(`<!doctype html>\n${htmlString}`);
+    return;
+  }
+  const options = isValidLocale(paths[1]) ? { basename: `/${locale}/` } : {};
+  const location = !options.basename ? req.url : req.url.replace(`${locale}/`, '');
+
+  const memoryHistory = createMemoryHistory(req.url, options);
+
+  const store = configureStore({ locale, accessToken: token.access_token }, memoryHistory);
+
+  const history = syncHistoryWithStore(memoryHistory, store);
+  console.log(store.getState());
+
+  match({ history, routes: configureRoutes(store), basename: `/${locale}`, location }, (err, redirectLocation, props) => {
+    if (err) {
+    // something went badly wrong, so 500 with a message
+      res.status(500).send(err.message);
+    } else if (redirectLocation) {
+    // we matched a ReactRouter redirect, so redirect from the server
+      res.redirect(302, redirectLocation.pathname + redirectLocation.search);
+    } else if (props) {
+    // if we got props, that means we found a valid component to render for the given route
+      const component =
+      (<Provider store={store}>
+        <RouterContext {...props} />
+      </Provider>);
+      const state = store.getState();
+      const htmlString = renderHtmlString(locale, userAgentString, state, component);
+      const status = props.routes.find(r => r.status === 404) !== undefined ? 404 : 200;
+
+      props.components
+        .forEach((comp) => {
+          console.log('---------');
+          console.log(comp);
+        });
+
+      res.status(status).send(`<!doctype html>\n${htmlString}`);
+
+    // Trigger sagas for components by rendering them (should not have any performance implications)
+    // https://github.com/yelouafi/redux-saga/issues/255#issuecomment-210275959
+      // renderToString(component);
+    // Dispatch a close event so sagas stop listening after they have resolved
+      store.close();
+    } else {
+      res.sendStatus(500);
+    }
+  });
+  console.log('SSR is ON!');
+}
+
+app.get('*', (req, res) => {
+  getToken().then((token) => {
+    handleResponse(req, res, token);
+  }).catch(err => res.status(500).send(err.message));
 });
 
 module.exports = app;

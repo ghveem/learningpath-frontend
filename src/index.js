@@ -11,13 +11,12 @@ import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { Router, useRouterHistory } from 'react-router';
 import { syncHistoryWithStore } from 'react-router-redux';
+import isEmpty from 'lodash/isEmpty';
 import { createHistory } from 'history';
 import ErrorReporter from 'ndla-error-reporter';
 import { configureLocale, isValidLocale } from './locale/configureLocale';
 import configureStore from './configureStore';
 import configureRoutes from './main/routes';
-import { accessToken } from './sources/helpers';
-
 
 function configureBrowserHistory(path) {
   if (isValidLocale(path)) {
@@ -36,16 +35,21 @@ const locale = paths.length > 2 && isValidLocale(paths[1]) ? paths[1] : 'nb';
 configureLocale(locale);
 const browserHistory = configureBrowserHistory(path);
 
-const store = configureStore({
+const emptyState = {
   authenticated: false,
-  accessToken,
+  accessToken: '',
   idToken: '',
   user: {},
   learningPathStep: {},
   learningPaths: [],
   messages: [],
   locale,
-}, browserHistory);
+};
+
+const initialState = !isEmpty(window.initialState) ? window.initialState : emptyState;
+
+
+const store = configureStore(initialState, browserHistory);
 
 const { logglyApiKey, logEnvironment, componentName } = window.config;
 window.errorReporter = ErrorReporter.getInstance({ store, logglyApiKey, environment: logEnvironment, componentName });
