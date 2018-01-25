@@ -1,0 +1,35 @@
+
+.zendesk {
+  display: none;
+
+  &--open {
+    display: block;
+    position: fixed;
+    width: 25rem;
+    height: 20rem;
+    background-color: white;
+    z-index: 3000;
+    right: 7rem;
+    bottom: 1rem;
+    border-radius: 2px;
+    border: 1px solid black;
+  }
+
+}
+
+.zendesk__button {
+  position: fixed;
+  right: 10rem;
+  bottom: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 30px;
+}
+
+
+.zendesk__test-button {
+  position: fixed;
+  right: 20rem;
+  bottom: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 30px;
+}

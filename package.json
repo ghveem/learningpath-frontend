@@ -108,6 +108,7 @@
     "ndla-ui": "^0.8.11",
     "ndla-util": "^0.1.7",
     "node-polyglot": "2.2.2",
+    "node-zendesk": "1.2.0",
     "prop-types": "^15.6.0",
     "query-string": "^5.0.0",
     "react": "^16.0.0",

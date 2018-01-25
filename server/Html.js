@@ -9,6 +9,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { renderToString } from 'react-dom/server';
+import zendesk from 'node-zendesk';
 import serialize from 'serialize-javascript';
 import config from '../src/config';
 import head from './Meta';
@@ -137,6 +138,7 @@ const Html = props => {
           className="app-container"
           dangerouslySetInnerHTML={{ __html: content }}
         />
+        <div  dangerouslySetInnerHTML={{__html: '<button onclick="zE.activate();" className="zendesk__test-button">Spør NDLA v2</button>'}} />
         <script
           dangerouslySetInnerHTML={{
             __html: `window.initialState = ${serialize(state)}`,
